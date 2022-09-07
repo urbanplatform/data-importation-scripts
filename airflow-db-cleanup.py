@@ -403,13 +403,13 @@ cleanup_TaskFail_op = PythonOperator(
     dag=dag
 )
 
-# cleanup_Task_op = PythonOperator(
-#     task_id='cleanup_Task_op',
-#     python_callable=cleanup_function,
-#     params=DATABASE_OBJECTS[4],
-#     provide_context=True,
-#     dag=dag
-# )
+cleanup_Task_op = PythonOperator(
+    task_id='cleanup_Task_op',
+    python_callable=cleanup_function,
+    params=DATABASE_OBJECTS[4],
+    provide_context=True,
+    dag=dag
+)
 
 cleanup_DagRun_op = PythonOperator(
     task_id='cleanup_DagRun_op',
@@ -475,4 +475,4 @@ cleanup_TaskInstace_op = PythonOperator(
     dag=dag
 )
 
-print_configuration>>cleanup_BaseJob_op>>cleanup_Log_op>>cleanup_DagModel_op>>cleanup_TaskFail_op>>cleanup_BaseXCom_op>>cleanup_DagRun_op>>cleanup_RaskReschedule_op>>cleanup_RenderTaskInstanceFields_op>>cleanup_ImportError_op>>cleanup_SlaMiss_op>>cleanup_TaskSet_op>>cleanup_TaskInstace_op
+print_configuration>>cleanup_BaseJob_op>>cleanup_Log_op>>cleanup_DagModel_op>>cleanup_TaskFail_op>>cleanup_BaseXCom_op>>cleanup_DagRun_op>>cleanup_RaskReschedule_op>>cleanup_RenderTaskInstanceFields_op>>cleanup_ImportError_op>>cleanup_SlaMiss_op>>cleanup_TaskSet_op>>cleanup_TaskInstace_op>>cleanup_Task_op
