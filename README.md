@@ -35,6 +35,11 @@ RABBIT_PASSWORD =
 
 For each datapoint, a message will be generated in the RabbitMQ Exchange, making it available for consumption
 
+## Maintenance DAGS
+
+In order to use the maintenance DAGS simply add them to the dags and leave them enabled, they will perform daily cleanups to the logs and database.
+To actually reclaim storage from the database a vacuum full must be performed, if space is not being reclaimed it may be beacuase the vacuum can't be properly performed on your database and the DB cleanup DAG is now only creating zombie files.
+
 ## How to contribute
 
 Contributions are welcome! Here are some ways you can contribute:
@@ -46,6 +51,7 @@ Contributions are welcome! Here are some ways you can contribute:
 Join us on Slack if you wish to discuss development or need help to get started.
 
 We would love your feedback on how to improve the contribution experience!
+
 
 ## Frequently Asked Questions
 
