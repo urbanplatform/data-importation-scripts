@@ -15,6 +15,7 @@ try:
 except Exception as e:
     from airflow.jobs.base_job import BaseJob
 from airflow.operators.python_operator import PythonOperator
+from airflow.providers.postgres.operators.postgres import PostgresOperator
 from datetime import datetime, timedelta
 import dateutil.parser
 import logging
@@ -43,7 +44,7 @@ ALERT_EMAIL_ADDRESSES = []
 # is set to 30, the job will remove those files that arE 30 days old or older.
 
 DEFAULT_MAX_DB_ENTRY_AGE_IN_DAYS = int(
-    Variable.get("airflow_db_cleanup__max_db_entry_age_in_days", 30)
+    Variable.get("airflow_db_cleanup__max_db_entry_age_in_days", 7)
 )
 # Prints the database entries which will be getting deleted; set to False to avoid printing large lists and slowdown process
 PRINT_DELETES = True
@@ -366,9 +367,8 @@ def cleanup_function(**context):
                       " is not present in the metadata. Skipping...")
 
 
+vaccum_full = """psql -U airflow -d airflow -c """ + str("vacuum FULL VERBOSE")
 
-
-    
 
 
 cleanup_BaseJob_op = PythonOperator(
@@ -475,4 +475,14 @@ cleanup_TaskInstace_op = PythonOperator(
     dag=dag
 )
 
-print_configuration>>cleanup_BaseJob_op>>cleanup_Log_op>>cleanup_DagModel_op>>cleanup_TaskFail_op>>cleanup_BaseXCom_op>>cleanup_DagRun_op>>cleanup_RaskReschedule_op>>cleanup_RenderTaskInstanceFields_op>>cleanup_ImportError_op>>cleanup_SlaMiss_op>>cleanup_TaskSet_op>>cleanup_TaskInstace_op>>cleanup_Task_op
+conn = ('postgres')
+vaccum_full_op = PostgresOperator(
+    task_id='vacuum',
+    postgres_conn_id=conn,
+    sql=("VACUUM FULL;"),
+    autocommit=True,
+    dag=dag
+)
+
+
+print_configuration>>cleanup_BaseJob_op>>cleanup_Log_op>>cleanup_DagModel_op>>cleanup_TaskFail_op>>cleanup_BaseXCom_op>>cleanup_DagRun_op>>cleanup_RaskReschedule_op>>cleanup_RenderTaskInstanceFields_op>>cleanup_ImportError_op>>cleanup_SlaMiss_op>>cleanup_TaskSet_op>>cleanup_TaskInstace_op>>cleanup_Task_op>>vaccum_full_op
