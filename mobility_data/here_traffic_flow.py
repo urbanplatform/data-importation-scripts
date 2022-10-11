@@ -12,13 +12,13 @@ from kombu import Connection
 from kombu import Exchange
 from kombu import Producer
 
-from constants import EMAILS, RABBIT_PASSWORD, FANOUT
-from constants import RABBIT_PORT
-from constants import RABBIT_URL
-from constants import RABBIT_USER
-from constants import TRAFFIC_FLOW_BASE_URL, TRAFFIC_FLOW_APP_ID, TRAFFIC_FLOW_APP_CODE, \
+from ..constants import EMAILS, RABBIT_PASSWORD, FANOUT
+from ..constants import RABBIT_PORT
+from ..constants import RABBIT_URL
+from ..constants import RABBIT_USER
+from ..constants import TRAFFIC_FLOW_BASE_URL, TRAFFIC_FLOW_APP_ID, TRAFFIC_FLOW_APP_CODE, \
     TRAFFIC_FLOW_BBOX, TRAFFIC_FLOW_RESP_ATTRS, TRAFFIC_FLOW_UNITS, TRAFFIC_FLOW_TS
-from schedules import SDL_HERE_TRAFFIC_FLOW
+from ..schedules import SDL_HERE_TRAFFIC_FLOW
 
 TRAFFIC_FLOW_BACKEND_TOKEN = None
 
