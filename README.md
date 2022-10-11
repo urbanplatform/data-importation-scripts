@@ -37,7 +37,9 @@ Each datapoint generates a message into the RabbitMQ Exchange, making it availab
 
 ### Maintenance DAGS
 
-Two Airflow Maintenance DAGs are currently available to perform cleanups to Airflow's logs and database. These DAGs have been adapted from [an open-source repository]() to work in the Airflow instances used in the Urban Platform's deployments.
+Two Airflow Maintenance DAGs are currently available to perform cleanups to Airflow's logs and database. These DAGs have been adapted from [an open-source repository](https://github.com/teamclairvoyant/airflow-maintenance-dags/) to work in the Airflow instances used in the Urban Platform's deployments.
+
+(Major kudos to [team Clairvoyant](https://github.com/teamclairvoyant) :clap:)
 
 In order to integrate them, simply import them into the `dags` folder and enable them, they will clean up the tool's logs and database in a daily fashion.
 
