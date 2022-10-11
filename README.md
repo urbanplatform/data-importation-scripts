@@ -43,8 +43,8 @@ Two Airflow Maintenance DAGs are currently available to perform cleanups to Airf
 
 In order to integrate them, simply import them into the `dags` folder and enable them, they will clean up the tool's logs and database in a daily fashion.
 
-However, to actually reclaim storage from the database, a `vacuum full` must be performed. Please be aware that if the space is not being properly reclaimed, that means the vacuum cannot be performed on your database and the DAG is only creating zombie files.
-
+While the log cleanup DAG remains unnchanged, the db cleanup DAG as seen some smaller changes. Firstly an operator order was added, this was done because the original DAG ran all it's operators simultaneously which was resource heavy, by providing an order we were able to reduce the ammount of ram and processing power needed to perform the cleanup. Finally a Postgres operator was added to perform a DB Vacuum, in this case 'vacuum full', if reclaiming storage space from Airflow's database is not necessary this stage can be ommited.
+Disclaimer: As for any other 'vacuum full' it is required that the machine has at least the same ammount of free storage as used by the database, if this is not the case the vacuum can not be succesfully performed and might crash.
 ## How to contribute
 
 Contributions are welcome! Here are some ways you can contribute:
