@@ -367,10 +367,6 @@ def cleanup_function(**context):
                       " is not present in the metadata. Skipping...")
 
 
-vaccum_full = """psql -U airflow -d airflow -c """ + str("vacuum FULL VERBOSE")
-
-
-
 cleanup_BaseJob_op = PythonOperator(
     task_id='cleanup_BaseJob_op',
     python_callable=cleanup_function,
@@ -476,7 +472,7 @@ cleanup_TaskInstace_op = PythonOperator(
 )
 
 conn = ('postgres')
-vaccum_full_op = PostgresOperator(
+vacuum_full_op = PostgresOperator(
     task_id='vacuum',
     postgres_conn_id=conn,
     sql=("VACUUM FULL;"),
@@ -485,4 +481,4 @@ vaccum_full_op = PostgresOperator(
 )
 
 
-print_configuration>>cleanup_BaseJob_op>>cleanup_Log_op>>cleanup_DagModel_op>>cleanup_TaskFail_op>>cleanup_BaseXCom_op>>cleanup_DagRun_op>>cleanup_RaskReschedule_op>>cleanup_RenderTaskInstanceFields_op>>cleanup_ImportError_op>>cleanup_SlaMiss_op>>cleanup_TaskSet_op>>cleanup_TaskInstace_op>>cleanup_Task_op>>vaccum_full_op
+print_configuration>>cleanup_BaseJob_op>>cleanup_Log_op>>cleanup_DagModel_op>>cleanup_TaskFail_op>>cleanup_BaseXCom_op>>cleanup_DagRun_op>>cleanup_RaskReschedule_op>>cleanup_RenderTaskInstanceFields_op>>cleanup_ImportError_op>>cleanup_SlaMiss_op>>cleanup_TaskSet_op>>cleanup_TaskInstace_op>>cleanup_Task_op>>vacuum_full_op
