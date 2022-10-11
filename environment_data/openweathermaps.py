@@ -5,30 +5,23 @@ import logging as log
 import copy
 import requests
 
-import pandas as pd
-from nextcloud import init_client, upload_to_cloud, download_from_cloud
-from utils import post_request, get_request
 from airflow import DAG
 from airflow.operators.python_operator import PythonOperator
 from airflow.utils import dates
-
-from kombu import Connection
-from kombu import Exchange
-from kombu import Producer
+from constants import EMAILS
 
 try:
-    from constants import OPEN_WEATHER_API_KEY, RAW_OPEN_WEATHER_URL
-    from constants import RABBIT_URL_NEANIAS
-    from utils import connect_to_rabbit_no_exchange
+    from ..constants import EMAILS, OPEN_WEATHER_API_KEY, RAW_OPEN_WEATHER_URL
+    from ..constants import FANOUT, RABBIT_URL, RABBIT_USER, RABBIT_PASSWORD, RABBIT_PORT
+    from ..utils import connect_to_rabbit, get_street_name
 except ImportError:
     from dags.constants import OPEN_WEATHER_API_KEY, RAW_OPEN_WEATHER_URL
-    from dags.constants import RABBIT_URL_NEANIAS
-    from dags.utils import connect_to_rabbit_no_exchange
+    from dags.constants import RABBIT_URL
+    from dags.utils import connect_to_rabbit, get_street_name
 
 # DAG Variables
-DAG_NAME = 'OWM_to_SmartDataModel'
+DAG_NAME = 'OpenWeatherMap2SmartDataModel'
 SDL_SDM_WEATHER = '0 */1 * * *'  # At minute 0 past every hour
-
 
 HELSINKI_LATITUDE = 60.1699 
 HELSINKI_LONGITUDE = 24.9384
@@ -36,17 +29,14 @@ OPEN_WEATHER_URL = '{}/weather?lat={}&lon={}&appid={}'.format(
     RAW_OPEN_WEATHER_URL, HELSINKI_LATITUDE, HELSINKI_LONGITUDE, OPEN_WEATHER_API_KEY
 )
 
-#Rabbit Variables
-RABBIT_QUEUE = "SmatDataModel"  
-RABBIT_USER = 'guest'
-RABBIT_PASSWORD = 'guest'
-RABBIT_URL='neanias-management.urbanplatform.city'#'64.225.98.211'
-RABBIT_PORT = '5672'
-
+# Other RabbitMQ Variables imported from constants
+RABBIT_QUEUE = "openweather_queue"
+RABBIT_EXCHANGE = "openweather_exchange"
 
 
 class WeatherSmartDataModel:
-    def __init__(self, id, type, address, dateObserved, areaServed, location, source, typeOfLocation, precipitation, relativeHumidity, temperature, windDirection, windSpeed, airQualityLevel, airQualityIndex, reliability, co, no, co2, nox, so2, coLevel,refPointOfInterest):
+    """ An observation of weather conditions at a certain place and time. This data model has been developed in cooperation with mobile operators and the GSMA. """
+    def __init__(self, id, type, address, dateObserved, areaServed, location, source, precipitation, relativeHumidity, temperature, windDirection, windSpeed, airQualityLevel, airQualityIndex, reliability, co, no, co2, nox, so2, coLevel,refPointOfInterest):
         self.id = id
         self.type = type
         self.address = address
@@ -54,7 +44,6 @@ class WeatherSmartDataModel:
         self.areaServed = areaServed
         self.location = location
         self.source = source
-        self.typeOfLocation = typeOfLocation
         self.precipitation = precipitation
         self.relativeHumidity = relativeHumidity
         self.temperature = temperature
@@ -81,7 +70,6 @@ class WeatherSmartDataModel:
             json_dct['areaServed'],
             json_dct['location'],
             json_dct['source'],
-            json_dct['typeOfLocation'],
             json_dct['precipitation'],
             json_dct['relativeHumidity'],
             json_dct['temperature'],
@@ -96,32 +84,18 @@ class WeatherSmartDataModel:
             json_dct['nox'],
             json_dct['so2'],
             json_dct['coLevel'],
-            json_dct['sourrefPointOfInterestce'],
-            )
+            json_dct['refPointOfInterest'],
+        )
         return model
-
-
 
 
 def convert_open_weather(**kwargs):
     headers = {'Content-Type': 'application/json',}
     response = requests.get(OPEN_WEATHER_URL, headers)
-    results=json.loads(response.content)
-    id = results["sys"]["country"]+"-"+results["name"]+"-AmbientObserverd"+str(datetime.datetime.now())
-    r_street = requests.get('https://nominatim.ubiwhere.com/reverse.php', params={'format':'json', 'lat': HELSINKI_LATITUDE,'lon':HELSINKI_LONGITUDE})
-    if r_street.status_code ==200:
-        try:
-            street_data = r_street.json()
-            
-            address = {  
-                "addressCountry": results["sys"]["country"],  
-                "addressLocality": results["name"],  
-                "streetAddress":  street_data["address"]["cycleway"]
-            }
-        except:
-            address = "problems with nominatim"
-    else:
-        address = "problems with nominatim"
+    results = json.loads(response.content)
+    id = results["sys"]["country"]+"-"+results["name"]+"-AmbientObserved"+str(datetime.datetime.now())
+    # TODO use Nominatim (or similar to translate coordinates to address) using get_street_name()
+    address = "Mannerheimintie"
 
     location = {  
         "type": "Point",  
@@ -133,59 +107,47 @@ def convert_open_weather(**kwargs):
         rain = 0
 
     outputModel=WeatherSmartDataModel(
-        id,
-        "AirQualityObserved",
-        address,
-        str(datetime.datetime.now()),
-        None,
-        location,
-        RAW_OPEN_WEATHER_URL,
-        "outdoor",
-        rain,
-        results["main"]["humidity"],
-        results["main"]["temp"],
-        results["wind"]["deg"],
-        results["wind"]["speed"],
-        None,
-        None,
-        None,
-        None,
-        None,
-        None,
-        None,
-        None,
-        None,
-        None
+        id=id,
+        type="AirQualityObserved",
+        address=address,
+        dateObserved=str(datetime.datetime.now()),
+        areaServed=None,
+        location=location,
+        source=RAW_OPEN_WEATHER_URL,
+        precipitation=rain,
+        relativeHumidity=results["main"]["humidity"],
+        temperature=results["main"]["temp"],
+        windDirection=results["wind"]["deg"],
+        windSpeed=results["wind"]["speed"],
+        airQualityLevel=None,
+        airQualityIndex=None,
+        reliability=None,
+        co=None,
+        no=None,
+        co2=None,
+        nox=None,
+        so2=None,
+        coLevel=None,
+        refPointOfInterest=None
     )
 
-    conn = Connection('amqp://{}:{}@{}:{}//'.format(RABBIT_USER, RABBIT_PASSWORD, RABBIT_URL, RABBIT_PORT))
-    exchange = Exchange('neanias', 'fanout', durable=True)
-    channel = conn.channel()
-    producer = Producer(channel, exchange, serializer='json')
-
+    producer = connect_to_rabbit(RABBIT_USER, RABBIT_PASSWORD, RABBIT_URL, RABBIT_PORT, FANOUT, RABBIT_EXCHANGE)
     msg = json.dumps(outputModel.__dict__)
-
     producer.publish(msg, routing_key=RABBIT_QUEUE)
-
-    log.info("Message sent to consumer {}".format(RABBIT_URL_NEANIAS))
-
-
+    log.info("Message sent to consumer {}".format(RABBIT_URL))
 
 
 args = {
     'owner': 'airflow',
     'start_date': dates.days_ago(2),
     'email': [
-        'jmgarcia@ubiwhere.com',
-        'rvitorino@ubiwhere.com',
-        'fgsantos@ubiwhere.com',
-        'jmarques@ubiwhere.com'
+        EMAILS
     ],
     'email_on_failure': True,
     'email_on_retry': False,
 }
 
-dag = DAG(DAG_NAME, description='Convert OWM to SmartDataModel',
+dag = DAG(DAG_NAME, description='Convert OpenWeatherMap to SmartDataModel WeatherObserved',
           schedule_interval=SDL_SDM_WEATHER,
           start_date=datetime.datetime(2022, 6, 24),
           catchup=False) 
