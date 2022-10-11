@@ -12,13 +12,13 @@ from kombu import Connection
 from kombu import Exchange
 from kombu import Producer
 
-from constants import FANOUT
-from constants import RABBIT_PASSWORD
-from constants import RABBIT_PORT
-from constants import RABBIT_URL
-from constants import RABBIT_USER
-from constants import TRIMET_ALERTS_URL
-from schedules import SDL_ALERTS_IMPORTER
+from ..constants import FANOUT
+from ..constants import RABBIT_PASSWORD
+from ..constants import RABBIT_PORT
+from ..constants import RABBIT_URL
+from ..constants import RABBIT_USER
+from ..constants import TRIMET_ALERTS_URL
+from ..schedules import SDL_ALERTS_IMPORTER
 
 HEADERS = {
     'Content-Type': 'application/json',
