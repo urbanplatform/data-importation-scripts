@@ -12,6 +12,7 @@ from kombu import Connection
 from kombu import Exchange
 from kombu import Producer
 
+from ..constants import EMAILS
 from ..constants import FANOUT
 from ..constants import RABBIT_PASSWORD
 from ..constants import RABBIT_PORT
@@ -118,12 +119,7 @@ args = {
     'owner': 'airflow',
     'start_date': dates.days_ago(2),
     'email': [
-        'ccortinhas@ubiwhere.com',
-        'fcardoso@ubiwhere.com',
-        'aduarte@ubiwhere.com',
-        'fmonsanto@ubiwhere.com',
-        'jmgarcia@ubiwhere.com',
-        'rvitorino@ubiwhere.com'
+        EMAILS,
     ],
     'email_on_failure': True,
     'email_on_retry': False,

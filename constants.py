@@ -19,3 +19,7 @@ TRIMET_ALERTS_API_KEY = '5EC1222618116DAB188A7C370'
 TRIMET_ALERTS_URL = 'https://developer.trimet.org/ws/v2/alerts/?appID={}'.format(TRIMET_ALERTS_API_KEY)
 
 EMAILS = [os.environ.get('EMAILS').split(',')]
+
+# Add your own email address for Airflow alerts here
+# if not EMAILS:
+#     EMAILS.append('smartcities@ubiwhere.com')
