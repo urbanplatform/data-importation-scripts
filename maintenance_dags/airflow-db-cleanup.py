@@ -12,7 +12,7 @@ from airflow.configuration import conf
 from airflow.models import DAG, DagTag, DagModel, DagRun, Log, XCom, SlaMiss, TaskInstance, Variable
 try:
     from airflow.jobs import BaseJob
-except Exception as e:
+except ImportError:
     from airflow.jobs.base_job import BaseJob
 from airflow.operators.python_operator import PythonOperator
 from airflow.providers.postgres.operators.postgres import PostgresOperator
